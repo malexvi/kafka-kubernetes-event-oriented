@@ -1,8 +1,6 @@
 networks:
   network-orquestrador:
     driver: bridge
-  network-kafka:
-    name: network-kafka
 
 services:
   db-orquestrador:

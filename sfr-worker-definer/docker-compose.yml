@@ -1,8 +1,6 @@
 networks:
   network-worker-definer:
     driver: bridge
-  network-kafka:
-    name: network-kafka
 
 services:
   db-worker-definer:
