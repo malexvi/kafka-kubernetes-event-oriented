@@ -1,0 +1,66 @@
+networks:
+  network-worker-region:
+    driver: bridge
+  network-kafka:
+    name: network-kafka
+
+services:
+  db-worker-region:
+    image: postgres:15
+    container_name: db-worker-region
+    environment:
+      POSTGRES_DB: db-worker-region
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5435:5432"
+    volumes:
+      - pgdata-worker-region:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d db-worker-region"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - network-worker-region
+
+  sfr-worker-region:
+    build: .
+    container_name: sfr-worker-region
+    ports:
+      - "8082:8080"
+    depends_on:
+      - db-worker-region
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db-worker-region:5432/db-worker-region
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    networks:
+      - network-worker-region
+      - network-kafka
+
+  kafka:
+    image: apache/kafka:3.7.0 
+    container_name: kafka
+    ports:
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LISTENERS: 'PLAINTEXT://:9092,CONTROLLER://:29093,EXTERNAL://:9094'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - network-kafka
+
+volumes:
+  pgdata-worker-region:

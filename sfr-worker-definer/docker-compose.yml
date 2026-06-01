@@ -1,0 +1,44 @@
+networks:
+  network-worker-definer:
+    driver: bridge
+  network-kafka:
+    name: network-kafka
+
+services:
+  db-worker-definer:
+    image: postgres:15
+    container_name: db-worker-definer
+    environment:
+      POSTGRES_DB: db-worker-definer
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata-worker-definer:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d db-worker-definer"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - network-worker-definer  
+
+  sfr-worker-definer:
+    build: .
+    container_name: sfr-worker-definer
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db-worker-definer
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db-worker-definer:5432/db-worker-definer
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    networks:
+      - network-worker-definer
+      - network-kafka
+
+volumes:
+  pgdata-worker-definer:

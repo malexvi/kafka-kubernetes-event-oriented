@@ -1,119 +1,14 @@
+include:  
+  - ./sfr-orquestrador-api/docker-compose.yml
+  - ./sfr-worker-definer/docker-compose.yml
+  - ./sfr-worker-region/docker-compose.yml
+
 networks:
-  network-orquestrador:
-    driver: bridge
-  network-worker-definer:
-    driver: bridge
-  network-worker-region:
-    driver: bridge
   network-kafka:
     driver: bridge
+    name: network-kafka
 
 services:
-  db-orquestrador:
-    image: postgres:15
-    container_name: db-orquestrador
-    environment:
-      POSTGRES_DB: db-orquestrador
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5433:5432"
-    volumes:
-      - pgdata-orquestrador:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d db-orquestrador"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - network-orquestrador
-
-  sfr-orquestrador-api:
-    build: ./sfr-orquestrador-api
-    container_name: sfr-orquestrador-api
-    ports:
-      - "8080:8080"
-    depends_on:
-      - db-orquestrador
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db-orquestrador:5432/db-orquestrador
-      - SPRING_DATASOURCE_USERNAME=user
-      - SPRING_DATASOURCE_PASSWORD=password
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-    networks:
-      - network-orquestrador
-      - network-kafka
-
-  db-worker-definer:
-    image: postgres:15
-    container_name: db-worker-definer
-    environment:
-      POSTGRES_DB: db-worker-definer
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5434:5432"
-    volumes:
-      - pgdata-worker-definer:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d db-worker-definer"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - network-worker-definer  
-
-  sfr-worker-definer:
-    build: ./sfr-worker-definer
-    container_name: sfr-worker-definer
-    ports:
-      - "8081:8080"
-    depends_on:
-      - db-worker-definer
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db-worker-definer:5432/db-worker-definer
-      - SPRING_DATASOURCE_USERNAME=user
-      - SPRING_DATASOURCE_PASSWORD=password
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-    networks:
-      - network-worker-definer
-      - network-kafka
-
-  db-worker-region:
-    image: postgres:15
-    container_name: db-worker-region
-    environment:
-      POSTGRES_DB: db-worker-region
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5435:5432"
-    volumes:
-      - pgdata-worker-region:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d db-worker-region"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - network-worker-region
-
-  sfr-worker-region:
-    build: ./sfr-worker-region
-    container_name: sfr-worker-region
-    ports:
-      - "8082:8080"
-    depends_on:
-      - db-worker-region
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db-worker-region:5432/db-worker-region
-      - SPRING_DATASOURCE_USERNAME=user
-      - SPRING_DATASOURCE_PASSWORD=password
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-    networks:
-      - network-worker-region
-      - network-kafka
-
   kafka:
     image: apache/kafka:3.7.0 
     container_name: kafka
@@ -137,7 +32,4 @@ services:
       - network-kafka
 
 volumes:
-  pgdata-orquestrador:
-  pgdata-worker-definer:
-  pgdata-worker-region:
   kafka-data:

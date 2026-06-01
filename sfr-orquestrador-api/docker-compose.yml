@@ -1,0 +1,44 @@
+networks:
+  network-orquestrador:
+    driver: bridge
+  network-kafka:
+    name: network-kafka
+
+services:
+  db-orquestrador:
+    image: postgres:15
+    container_name: db-orquestrador
+    environment:
+      POSTGRES_DB: db-orquestrador
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata-orquestrador:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d db-orquestrador"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - network-orquestrador
+
+  sfr-orquestrador-api:
+    build: .
+    container_name: sfr-orquestrador-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db-orquestrador
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db-orquestrador:5432/db-orquestrador
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    networks:
+      - network-orquestrador
+      - network-kafka
+
+volumes:
+  pgdata-orquestrador:
