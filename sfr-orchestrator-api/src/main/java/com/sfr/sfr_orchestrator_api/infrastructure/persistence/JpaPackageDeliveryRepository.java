@@ -1,4 +1,4 @@
-package com.sfr.sfr_orchestrator_api.domain.repository;
+package com.sfr.sfr_orchestrator_api.infrastructure.persistence;
 
 import java.util.UUID;
 
@@ -8,5 +8,6 @@ import org.springframework.stereotype.Repository;
 import com.sfr.sfr_orchestrator_api.domain.entity.PackageDelivery;
 
 @Repository
-public interface PackageDeliveryRepository extends JpaRepository<PackageDelivery, UUID> {
+public interface JpaPackageDeliveryRepository extends JpaRepository<PackageDelivery, UUID> {
+
 }
