@@ -1,4 +1,4 @@
-package com.sfr.sfr_orchestrator_api.controller;
+package com.sfr.sfr_orchestrator_api.api.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sfr.sfr_orchestrator_api.dto.PackageDeliveryRequest;
-import com.sfr.sfr_orchestrator_api.service.PackageDeliveryService;
+import com.sfr.sfr_orchestrator_api.application.dto.PackageDeliveryRequest;
+import com.sfr.sfr_orchestrator_api.application.service.PackageDeliveryService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

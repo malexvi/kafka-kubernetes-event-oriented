@@ -1,4 +1,4 @@
-package com.sfr.sfr_orchestrator_api.repository;
+package com.sfr.sfr_orchestrator_api.domain.repository;
 
 import java.util.UUID;
 

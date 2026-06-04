@@ -1,5 +1,5 @@
 {
-    "namespace": "com.sfr.sfr_orchestrator_api.avro",
+    "namespace": "com.sfr.sfr_orchestrator_api.infrastructure.kafka.avro",
     "type": "record",
     "name": "RequestStartedEvent",
     "fields": [
@@ -41,10 +41,5 @@
             "name": "destinationZipCode",
             "type": "string"
         },
-        {
-            "name": "cargoType", 
-            "type": ["null", "string"],
-            "default": null
-        }
     ]
 }

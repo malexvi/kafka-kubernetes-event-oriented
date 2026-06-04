@@ -1,5 +1,6 @@
 package com.sfr.sfr_orchestrator_api.domain.entity;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import com.sfr.sfr_orchestrator_api.domain.enums.DeliveryStatus;
@@ -49,4 +50,6 @@ public class PackageDelivery {
 
     @Enumerated(EnumType.STRING)
     private DeliveryType deliveryType;
+
+    private Instant timestamp;
 }
