@@ -7,11 +7,11 @@ import com.sfr.sfr_orchestrator_api.domain.entity.PackageDelivery;
 
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
 @Component
-public class RepositoryPortImplements implements JpaRepositoryPort {
+@RequiredArgsConstructor
+public class PackageDeliveryPersistenceAdapter implements JpaRepositoryPort {
 
-    public final JpaPackageDeliveryRepository repository;
+    private final JpaPackageDeliveryRepository repository;
 
     @Override
     public PackageDelivery save(PackageDelivery delivery) {

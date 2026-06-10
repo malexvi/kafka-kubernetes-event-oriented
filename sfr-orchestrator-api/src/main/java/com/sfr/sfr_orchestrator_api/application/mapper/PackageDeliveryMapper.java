@@ -10,7 +10,6 @@ import com.sfr.sfr_orchestrator_api.domain.entity.PackageDimension;
 import com.sfr.sfr_orchestrator_api.domain.entity.PackageRegion;
 import com.sfr.sfr_orchestrator_api.domain.enums.DeliveryStatus;
 
-@Component
 public class PackageDeliveryMapper {
     public static PackageDelivery toDelivery(PackageDeliveryRequest request, UUID correlationId) {
         return PackageDelivery.builder()
