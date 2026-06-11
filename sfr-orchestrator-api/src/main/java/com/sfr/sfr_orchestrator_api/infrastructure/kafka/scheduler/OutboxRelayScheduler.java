@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional; // Adicionado
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sfr.sfr_orchestrator_api.application.event.DeliveryRequestedEvent;
@@ -21,17 +22,18 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OutboxRelayScheduler {
 
-    private OutboxRepositoryPort outboxRepositoryPort;
-    private KafkaTemplate<String, RequestStartedEvent> kafkaTemplate;
-    private PackageDeliveryRequestAvroMapper avroMapper;
-    private ObjectMapper objectMapper;
+    private final OutboxRepositoryPort outboxRepositoryPort;
+    private final KafkaTemplate<String, RequestStartedEvent> kafkaTemplate;
+    private final PackageDeliveryRequestAvroMapper avroMapper;
+    private final ObjectMapper objectMapper;
 
     @Scheduled(fixedDelay = 200)
+    @Transactional
     public void pullAndPublish() {
         List<OutboxEvent> unprocessedEvents = outboxRepositoryPort.findUnprocessedEvents();
 
         if (unprocessedEvents.isEmpty()) {
-            throw new RuntimeException("Deu ruim, alguem tem que ver isso ai");
+            return;
         }
 
         log.info("Encontrados {} eventos na Outbox para processar.", unprocessedEvents.size());

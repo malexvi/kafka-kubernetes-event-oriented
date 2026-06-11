@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    # Acessa a porta 5433 que o Docker expõe para a sua máquina física
+    url: jdbc:postgresql://localhost:5433/db-orchestrator
+    username: user
+    password: password
+
+  kafka:
+    # Conecta no listener EXTERNAL mapeado na porta 9094 do seu localhost
+    bootstrap-servers: localhost:9094
+    producer:
+      properties:
+        # Conecta na porta externa 8085 mapeada para o Schema Registry
+        schema.registry.url: http://localhost:8085
