@@ -17,8 +17,12 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
-    properties:
-      schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8085}
+      acks: all
+      delivery-timeout: 30s
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8085}
 
 kafka:
   topic:

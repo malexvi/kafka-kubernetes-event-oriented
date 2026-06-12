@@ -1,21 +1,22 @@
 package com.sfr.sfr_orchestrator_api.config;
 
 import org.apache.kafka.clients.admin.NewTopic;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
 
+import lombok.RequiredArgsConstructor;
+
 @Configuration
+@RequiredArgsConstructor
 public class AutoCreateConfig {
 
-    @Value("${kafka.topic.package-delivery}")
-    public String topic;
+    private final KafkaTopicsProperties topicsProperties;
 
     @Bean
     public NewTopic libraryEvents() {
         return TopicBuilder
-                .name(topic)
+                .name(topicsProperties.getPackageDelivery())
                 .partitions(3)
                 .replicas(3)
                 .build();

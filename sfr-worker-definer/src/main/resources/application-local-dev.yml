@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5434/db-worker-definer
+    username: user
+    password: password
+
+  kafka:
+    bootstrap-servers: localhost:9094
+    consumer:
+      properties:
+        schema.registry.url: http://localhost:8085
