@@ -12,6 +12,6 @@ import lombok.Setter;
 @Setter
 public class KafkaTopicsProperties {
 
-    private String packageDelivery;
+    private String packageDeliveryTopic;
 
 }

@@ -1,7 +1,5 @@
 package com.sfr.sfr_orchestrator_api.application.service;
 
-import java.util.UUID;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +29,10 @@ public class PackageDeliveryService {
     @Transactional
     public void create(PackageDeliveryRequest packageDeliveryRequest) {
 
-        PackageDelivery delivery = PackageDeliveryMapper.toDelivery(packageDeliveryRequest, UUID.randomUUID());
+        PackageDelivery delivery = PackageDeliveryMapper.toDelivery(
+                packageDeliveryRequest,
+                packageDeliveryRequest.correlationId()
+        );
 
         PackageDelivery savedDelivery = jpaRepositoryPort.save(delivery);
 
@@ -39,13 +40,16 @@ public class PackageDeliveryService {
 
         try {
             String jsonPayload = objectMapper.writeValueAsString(eventToPublish);
-            OutboxEvent outboxEvent = OutboxEventMapper.toOutboxEvent(savedDelivery,
-                    topicProperties.getPackageDelivery(), jsonPayload);
+            OutboxEvent outboxEvent = OutboxEventMapper.toOutboxEvent(
+                    savedDelivery,
+                    topicProperties.getPackageDeliveryTopic(),
+                    jsonPayload
+            );
 
             outboxRepositoryPort.save(outboxEvent);
 
         } catch (Exception e) {
-            throw new SerializerException("", "");
+            throw new SerializerException("Erro ao serializar payload do evento de Outbox", e.getMessage());
         }
     }
 }
