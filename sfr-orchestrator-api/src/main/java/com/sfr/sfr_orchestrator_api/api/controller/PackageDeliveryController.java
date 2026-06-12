@@ -6,22 +6,26 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-//@RestController
-//RequestMapping("/api/delivery")
+import java.util.UUID;
+
+import static com.sfr.sfr_orchestrator_api.config.constants.PathConstants.DELIVERY_API_PATH;
+
+@RestController
+@RequestMapping(DELIVERY_API_PATH)
 @RequiredArgsConstructor
 public class PackageDeliveryController {
 
     private final PackageDeliveryService packageDeliveryService;
 
     @PostMapping
-    public ResponseEntity<Void> create(@Valid @RequestBody PackageDeliveryRequest request) {
-        packageDeliveryService.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .build();
+    public ResponseEntity<Void> create(
+            @RequestAttribute("correlationId") UUID correlationId,
+            @Valid @RequestBody PackageDeliveryRequest request) {
+
+        packageDeliveryService.create(request.withCorrelationId(correlationId));
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }

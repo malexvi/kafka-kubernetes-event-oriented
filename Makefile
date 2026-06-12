@@ -13,6 +13,8 @@ help:
 	@echo "  make avro-gen      - Compila e gera as classes Java a partir do Avro"
 	@echo "  make run-orch      - Roda o Orquestrador fora do container (local-dev)"
 	@echo "  make status        - Exibe o status atual de execução dos containers"
+	@echo "  make valid-request  - Envia uma requisição válida para a API"
+    @echo "  make invalid-request - Envia uma requisição inválida para testar validações"
 	@echo "=========================================================================="
 
 # 1 - Rodar infra total (Cenário 2)
@@ -46,3 +48,29 @@ watch-topic:
 # Monitorar mensagens decodificando o formato Avro via Schema Registry
 watch-avro:
 	docker exec -it schema-registry kafka-avro-console-consumer --bootstrap-server kafka:9092 --topic package-delivery-topic --from-beginning --property schema.registry.url=http://localhost:8081
+
+# Envia uma requisição válida
+valid-request:
+	curl -i -X POST http://localhost:8080/api/delivery \
+	-H "Content-Type: application/json" \
+	-d '{
+		"height": 99.5,
+		"width": 99.0,
+		"length": 99.0,
+		"weight": 99.5,
+		"originZipCode": "99001000",
+		"destinationZipCode": "99001000"
+	}'
+
+# Envia uma requisição inválida (peso negativo e CEP inválido)
+invalid-request:
+	curl -i -X POST http://localhost:8080/api/delivery \
+	-H "Content-Type: application/json" \
+	-d '{
+		"height": -10.0,
+		"width": 0,
+		"length": -5.0,
+		"weight": -1.0,
+		"originZipCode": "123",
+		"destinationZipCode": ""
+	}'

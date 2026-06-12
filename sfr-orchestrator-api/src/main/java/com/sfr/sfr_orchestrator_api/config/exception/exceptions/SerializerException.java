@@ -1,4 +1,4 @@
-package com.sfr.sfr_orchestrator_api.config.exceptions;
+package com.sfr.sfr_orchestrator_api.config.exception.exceptions;
 
 import org.springframework.http.HttpStatus;
 
