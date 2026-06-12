@@ -8,9 +8,9 @@ import com.sfr.sfr_orchestrator_api.domain.entity.PackageRegion;
 import com.sfr.sfr_orchestrator_api.domain.enums.DeliveryStatus;
 
 public class PackageDeliveryMapper {
-        public static PackageDelivery toDelivery(PackageDeliveryRequest request, UUID correlationId) {
+        public static PackageDelivery toDelivery(PackageDeliveryRequest request) {
                 return PackageDelivery.builder()
-                        .correlationId(correlationId)
+                        .correlationId(request.correlationId())
                         .dimension(PackageDimension.builder()
                                 .height(request.height())
                                 .width(request.width())

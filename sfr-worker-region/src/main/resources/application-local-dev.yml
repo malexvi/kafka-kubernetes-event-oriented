@@ -9,3 +9,6 @@ spring:
     consumer:
       properties:
         schema.registry.url: http://localhost:8085
+kafka:
+  topic:
+    package-delivery-topic: "package-delivery-topic"

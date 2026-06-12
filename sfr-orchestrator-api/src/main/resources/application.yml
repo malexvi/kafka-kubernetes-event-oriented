@@ -26,4 +26,4 @@ spring:
 
 kafka:
   topic:
-    package-delivery: "package-delivery-topic"
+    package-delivery-topic: "package-delivery-topic"

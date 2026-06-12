@@ -12,3 +12,6 @@ spring:
       properties:
         # Conecta na porta externa 8085 mapeada para o Schema Registry
         schema.registry.url: http://localhost:8085
+kafka:
+  topic:
+    package-delivery-topic: "package-delivery-topic"
