@@ -6,9 +6,26 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9094
+
     consumer:
+      group-id: worker-region-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+      isolation-level: read_committed
       properties:
         schema.registry.url: http://localhost:8085
+        specific.avro.reader: true
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      transaction-id-prefix: tx-worker-region-
+      properties:
+        enable.idempotence: true
+        schema.registry.url: http://localhost:8085
+
 kafka:
   topic:
     package-delivery-topic: "package-delivery-topic"
+    package-delivery-response-topic: "package-delivery-response-topic"

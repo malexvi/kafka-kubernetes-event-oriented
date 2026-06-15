@@ -1,0 +1,44 @@
+{
+  "namespace": "com.sfr.sfr_worker_region.infrastructure.kafka.avro",
+  "type": "record",
+  "name": "RequestStartedEvent",
+  "fields": [
+    {
+      "name": "orderId",
+      "type": {
+        "type": "string",
+        "logicalType": "uuid"
+      }
+    },
+    {
+      "name": "correlationId",
+      "type": {
+        "type": "string",
+        "logicalType": "uuid"
+      }
+    },
+    {
+      "name": "weight",
+      "type": "double"
+    },
+    {
+      "name": "height",
+      "type": "double"
+    },
+    {
+      "name": "width",
+      "type": "double"
+    },
+    {
+      "name": "length",
+      "type": "double"
+    },
+    {
+      "name": "originZipCode",
+      "type": "string"
+    },
+    {
+      "name": "destinationZipCode",
+      "type": "string"
+    }
+  ]
