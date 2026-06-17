@@ -22,6 +22,10 @@
       "type": "string"
     },
     {
+      "name": "cubedWeight",
+      "type": "double"
+    },
+    {
       "name": "status",
       "type": "string"
     }

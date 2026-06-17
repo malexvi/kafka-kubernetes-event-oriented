@@ -252,6 +252,300 @@ PostgreSQL
  Processamento Assíncrono
 ```
 
+SFR Worker Region (Worker 1)
+
+O Worker Region é o primeiro microsserviço especialista da malha assíncrona. Ele é responsável por enriquecer os dados da entrega, calcular métricas logísticas e integrar-se com serviços externos de geolocalização.
+
+Responsabilidades de Negócio
+
+Cálculo de Peso Cubado: Aplica a fórmula oficial de cubagem rodoviária/aérea padrão (Fator 300) com base nas dimensões (altura, largura, comprimento) contidas no evento de entrada.
+
+Mapeamento de Região Geográfica: Determina se a entrega ocorrerá em uma área metropolitana (SAME_REGION) ou demandará transferência interestadual (DISTANT_REGION).
+
+Padrões Arquiteturais Específicos
+
+Enquanto o Orquestrador utiliza o padrão Transactional Outbox por ser o ponto de entrada síncrono (HTTP) do sistema, este Worker é puramente orientado a eventos e utiliza uma abordagem arquitetural diferente:
+
+Exactly-Once Semantics (EOS) / Transações Kafka-Centric
+
+Este serviço resolve o problema da Escrita Dupla (Dual-Write Problem) de forma nativa e sem tabelas auxiliares. O processamento ocorre dentro de uma transação atômica gerenciada pelo KafkaTransactionManager em conjunto com o Spring Data JPA:
+
+A mensagem só é consumida pelo listener.
+
+O processamento e integração externa ocorrem.
+
+O estado é salvo no banco de dados local (db-worker-region).
+
+A mensagem de resposta é publicada no tópico de destino.
+
+Commit Atômico: O commit do PostgreSQL e o avanço do offset do Kafka acontecem simultaneamente. Se qualquer falha ocorrer (ex: queda de rede, API externa fora do ar, falha no banco), a operação sofre Rollback Automático, o envio da resposta é abortado e a mensagem original é reprocessada, garantindo zero perda ou duplicação de dados.
+
+O consumidor do Worker está configurado com isolation.level=read_committed, e o produtor possui um transaction-id-prefix para garantir resiliência contra crash/reinicialização do Pod.
+
+Integração com OpenFeign (Outbound Adapter)
+
+A consulta das UF (Estados) dos CEPs é feita consultando a API pública do ViaCEP.
+Respeitando a Clean Architecture (Ports and Adapters), a regra de negócio central não conhece o OpenFeign. A comunicação HTTP está isolada na classe AddressIntegrationAdapter, que implementa a porta AddressIntegrationPort.
+
+Fluxo de Processamento do Worker
+
+Apache Kafka (Tópico de Entrada)
+│
+▼
+[ Consume ] RequestStartedEvent
+│
+├── 1. Abre Transação Spring / Kafka
+│
+├── 2. [ HTTP/GET ] OpenFeign -> ViaCEP API (Consulta UF Origem e Destino)
+│
+├── 3. Executa Regras de Negócio (Cubagem e Roteamento)
+│
+├── 4. [ PostgreSQL ] Salva entidade `RegionProcessing`
+│
+├── 5. [ Produce ] Publica RegionDefinedEvent (UNCOMMITTED)
+│
+└── 6. Commit Global Atômico (DB Commit + Kafka Offset Sync)
+│
+▼
+Apache Kafka (Tópico de Saída)
+
+
+Consumo e Produção (Tópicos)
+
+Consome de: package-delivery-topic
+
+Contrato de Entrada: RequestStartedEvent.avsc
+
+Produz para: package-delivery-response-topic
+
+Contrato de Saída: RegionDefinedEvent.avsc (Enriquecido com region e cubedWeight)
+
+Como rodar o Worker isoladamente
+
+Garanta que a infraestrutura (Kafka, Schema Registry, DBs) esteja rodando via Docker.
+
+Certifique-se de compilar os schemas Avro primeiro:
+
+cd sfr-worker-region
+./mvnw clean compile -U
+
+
+Suba a aplicação com o profile de desenvolvimento:
+
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local-dev
+
+
+Envie o curl no Orquestrador. Você verá os logs do Worker Region capturando o evento, consultando o ViaCEP, calculando o peso cubado e enviando o novo evento para o Kafka na mesma fração de segundo!# SFR Worker Region (Worker 1)
+
+O **Worker Region** é o primeiro microsserviço especialista da malha assíncrona. Ele é responsável por enriquecer os dados da entrega, calcular métricas logísticas e integrar-se com serviços externos de geolocalização.
+
+---
+
+## Responsabilidades de Negócio
+
+### Cálculo de Peso Cubado
+
+Aplica a fórmula oficial de cubagem rodoviária/aérea padrão (**Fator 300**) com base nas dimensões (**altura, largura e comprimento**) contidas no evento de entrada.
+
+### Mapeamento de Região Geográfica
+
+Determina se a entrega ocorrerá em uma área metropolitana (**SAME_REGION**) ou demandará transferência interestadual (**DISTANT_REGION**).
+
+---
+
+## Padrões Arquiteturais Específicos
+
+Enquanto o **Orquestrador** utiliza o padrão **Transactional Outbox** por ser o ponto de entrada síncrono (HTTP) do sistema, este Worker é puramente orientado a eventos e utiliza uma abordagem arquitetural diferente.
+
+### Exactly-Once Semantics (EOS) / Transações Kafka-Centric
+
+Este serviço resolve o problema da **Escrita Dupla (Dual-Write Problem)** de forma nativa e sem tabelas auxiliares.
+
+O processamento ocorre dentro de uma transação atômica gerenciada pelo **KafkaTransactionManager** em conjunto com o **Spring Data JPA**:
+
+1. A mensagem é consumida pelo listener.
+2. O processamento e integrações externas são executados.
+3. O estado é persistido no banco de dados local (`db-worker-region`).
+4. A mensagem de resposta é publicada no tópico de destino.
+
+#### Commit Atômico
+
+O commit do PostgreSQL e o avanço do offset do Kafka acontecem simultaneamente.
+
+Se qualquer falha ocorrer (queda de rede, API externa indisponível, falha no banco de dados etc.), toda a operação sofre **rollback automático**, o envio da resposta é cancelado e a mensagem original é reprocessada, garantindo:
+
+* Zero perda de dados;
+* Zero duplicação de eventos;
+* Consistência transacional entre banco e mensageria.
+
+O consumidor está configurado com:
+
+```properties
+isolation.level=read_committed
+```
+
+O produtor utiliza:
+
+```properties
+transaction-id-prefix
+```
+
+garantindo resiliência em cenários de falha, reinicialização da aplicação ou recriação de Pods.
+
+---
+
+## Integração com OpenFeign (Outbound Adapter)
+
+A consulta das UFs (Estados) dos CEPs é realizada através da API pública do **ViaCEP**.
+
+Seguindo os princípios da **Clean Architecture (Ports and Adapters)**, a regra de negócio central não possui dependência direta do OpenFeign.
+
+Toda a comunicação HTTP está isolada no adapter:
+
+```java
+AddressIntegrationAdapter
+```
+
+que implementa a porta:
+
+```java
+AddressIntegrationPort
+```
+
+---
+
+## Fluxo de Processamento do Worker
+
+```text
+Apache Kafka (Tópico de Entrada)
+     │
+     ▼
+[ Consume ] RequestStartedEvent
+     │
+     ├── 1. Abre Transação Spring / Kafka
+     │
+     ├── 2. [ HTTP/GET ] OpenFeign → ViaCEP API
+     │        (Consulta UF Origem e Destino)
+     │
+     ├── 3. Executa Regras de Negócio
+     │        • Cubagem
+     │        • Roteamento Regional
+     │
+     ├── 4. [ PostgreSQL ]
+     │        Salva entidade RegionProcessing
+     │
+     ├── 5. [ Produce ]
+     │        Publica RegionDefinedEvent
+     │        (UNCOMMITTED)
+     │
+     └── 6. Commit Global Atômico
+               (DB Commit + Kafka Offset Sync)
+               │
+               ▼
+Apache Kafka (Tópico de Saída)
+```
+
+---
+
+## Consumo e Produção (Tópicos)
+
+### Consome de
+
+```text
+package-delivery-topic
+```
+
+**Contrato de Entrada**
+
+```text
+RequestStartedEvent.avsc
+```
+
+### Produz para
+
+```text
+package-delivery-response-topic
+```
+
+**Contrato de Saída**
+
+```text
+RegionDefinedEvent.avsc
+```
+
+Evento enriquecido com:
+
+* `region`
+* `cubedWeight`
+
+---
+
+## Como Rodar o Worker Isoladamente
+
+### 1. Suba a Infraestrutura
+
+Garanta que a infraestrutura esteja em execução:
+
+* Apache Kafka
+* Schema Registry
+* PostgreSQL
+
+Todos os componentes podem ser iniciados via Docker.
+
+---
+
+### 2. Compile os Schemas Avro
+
+```bash
+cd sfr-worker-region
+./mvnw clean compile -U
+```
+
+---
+
+### 3. Execute a Aplicação
+
+Utilizando o profile de desenvolvimento:
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local-dev
+```
+
+---
+
+### 4. Teste o Fluxo
+
+Envie uma requisição para o **SFR Orchestrator API**.
+
+Nos logs do Worker Region será possível acompanhar:
+
+* Consumo do evento de entrada;
+* Consulta dos CEPs via ViaCEP;
+* Cálculo do peso cubado;
+* Definição da região logística;
+* Persistência dos dados;
+* Publicação do novo evento no Kafka.
+
+Todo o fluxo ocorre dentro de uma única transação atômica, garantindo consistência e confiabilidade no processamento orientado a eventos.
+
+---
+
+## Tecnologias Utilizadas
+
+* Java 21
+* Spring Boot
+* Spring Kafka
+* Apache Kafka
+* Apache Avro
+* Schema Registry
+* PostgreSQL
+* Spring Data JPA
+* OpenFeign
+* Docker
+* Clean Architecture
+* Event-Driven Architecture (EDA)
+* Exactly-Once Semantics (EOS)
+
 
 curl -i -X POST http://localhost:8080/api/delivery \
 -H "Content-Type: application/json" \
